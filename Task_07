@@ -1,0 +1,47 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# 1.1 Load the Data
+sensor_data = [
+    ("S1", "2025-04-28 10:00", 35.2, 12.1, 0.002),
+    ("S2", "2025-04-28 10:00", 36.5, 14.0, 0.003),
+    ("S1", "2025-04-28 11:00", 36.1, 12.5, 0.0021),
+    ("S3", "2025-04-28 10:00", 34.0, 11.8, 0.0025),
+    ("S2", "2025-04-28 11:00", 37.2, 14.3, 0.0031),
+    ("S1", "2025-04-28 12:00", 37.0, 13.0, 0.0022),
+]
+
+df = pd.DataFrame(sensor_data, columns=["Sensor_ID", "Timestamp", "Temperature", "Stress", "Displacement"])
+df["Timestamp"] = pd.to_datetime(df["Timestamp"])
+
+# 1.2 Summary Statistics
+summary = df.groupby("Sensor_ID")[["Temperature", "Stress", "Displacement"]].mean().round(2)
+print("Average Readings per Sensor:\n", summary, "\n")
+
+highest_temp_sensor = summary["Temperature"].idxmax()
+print(f"Sensor with Highest Average Temperature: {highest_temp_sensor}\n")
+
+# 1.3 Time Series Visualization: Temperature vs Time
+plt.figure(figsize=(10, 6))
+for sensor in df["Sensor_ID"].unique():
+    sensor_df = df[df["Sensor_ID"] == sensor]
+    plt.plot(sensor_df["Timestamp"], sensor_df["Temperature"], marker="o", label=sensor)
+
+plt.xlabel("Time")
+plt.ylabel("Temperature")
+plt.title("Temperature over Time per Sensor")
+plt.legend()
+plt.grid(True)
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# 1.4 Scatter Plot: Stress vs Displacement
+plt.figure(figsize=(7, 5))
+plt.scatter(df["Stress"], df["Displacement"], c="orange", edgecolors="black", s=80)
+plt.xlabel("Stress")
+plt.ylabel("Displacement")
+plt.title("Stress vs. Displacement")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
