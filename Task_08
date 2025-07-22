@@ -1,0 +1,54 @@
+import numpy as np
+
+sensor_data = [
+("S1", "2025-04-28 10:00", 35.2, 12.1, 0.002),
+("S2", "2025-04-28 10:00", 36.5, 14.0, 0.003),
+("S1", "2025-04-28 11:00", 36.1, 12.5, 0.0021),
+("S3", "2025-04-28 10:00", 34.0, 11.8, 0.0025),
+("S2", "2025-04-28 11:00", 37.2, 14.3, 0.0031),
+("S1", "2025-04-28 12:00", 37.0, 13.0, 0.0022),
+]
+
+# Rec_01 Convert the sensor data into a structured NumPy array
+dtype = [
+    ('sensor_id', 'S2'),   string 2
+    ('timestamp', 'S16'),
+    ('temperature', 'f4'),  float
+    ('stress', 'f4'),
+    ('displacement', 'f4')
+]
+
+# Convert to structured array
+structured_array = np.array(sensor_data, dtype=dtype)
+print(structured_array)
+
+
+# Rec_02 Calculate the average temperature, stress, and displacement for each sensor.
+sensors = np.unique(structured_array['sensor_id'])
+for sensor in sensors:
+    sensor_readings = structured_array[structured_array['sensor_id'] == sensor]
+    avg_temp = np.mean(sensor_readings['temperature'])
+    avg_stress = np.mean(sensor_readings['stress'])
+    avg_disp = np.mean(sensor_readings['displacement'])
+    print(f"Sensor {sensor}:")
+    print(f"  Average Temperature: {avg_temp:.2f} °C")
+    print(f"  Average Stress: {avg_stress:.2f}")
+    print(f"  Average Displacement: {avg_disp:.4f}")
+
+# Rec_03 Identify the sensor with the highest average stress.
+max_avg_stress = -np.inf
+sensor_with_max_stress = None
+
+for sensor in sensors:
+    readings = structured_array[structured_array['sensor_id'] == sensor]
+    avg_stress = np.mean(readings['stress'])
+    if avg_stress > max_avg_stress:
+        max_avg_stress = avg_stress
+        sensor_with_max_stress = sensor
+
+print(f"Sensor with the highest average stress: {sensor_with_max_stress}")
+print(f"Average Stress: {max_avg_stress:.2f}")
+
+# Rec_04 Extract all readings where temperature > 36.0°C.
+high_temp_readings = structured_array[structured_array['temperature'] > 36.0]
+print(f"high_temp_readings:{high_temp_readings}")
