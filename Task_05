@@ -1,0 +1,373 @@
+import csv
+import json
+import pandas as pd
+
+sensor_data = [
+("S1", "2025-04-28 10:00", 35.2, 12.1, 0.002),
+("S2", "2025-04-28 10:00", 36.5, 14.0, 0.003),
+("S1", "2025-04-28 11:00", 36.1, 12.5, 0.0021),
+("S3", "2025-04-28 10:00", 34.0, 11.8, 0.0025),
+("S2", "2025-04-28 11:00", 37.2, 14.3, 0.0031),
+("S1", "2025-04-28 12:00", 37.0, 13.0, 0.0022),
+]
+
+# Organize readings per sensor
+sortedList = sorted(sensor_data)
+print(sortedList, "\n")
+
+# csv file for sorted data
+csv_file_path = 'sortedData.csv'
+csv_new_file = 'newSortedData.csv'
+
+with open(csv_file_path, mode='w', newline='') as file:
+    csv_writer = csv.writer(file)
+    csv_writer.writerows(sensor_data)
+
+with open(csv_new_file, mode='w', newline='') as new_file:
+    csv_writer = csv.writer(new_file)
+    csv_writer.writerows(sensor_data)
+
+with open(csv_new_file) as new_file:
+    csv_reader = csv.reader(new_file)
+    # csv_reader = csv.reader (new_file, delimiter="\t")
+    for row in csv_reader:
+        print(row)
+
+with (open(csv_file_path, mode='r', newline='') as file):
+    csv_reader = csv.reader(file)
+    with open(csv_file_path, mode='w', newline='') as new_file:
+        header_fields = ['Sensor_ID', 'timestamp', 'temp', 'stress', 'displacement']
+        writer = csv.DictWriter(new_file, fieldnames=header_fields, delimiter="\t")
+        writer.writeheader()
+        for row in csv_reader:
+            csv.writer.writerow(dict(zip(header_fields, row)))
+
+# json file for sorted data
+sorted_data_dicts = []
+for sensor_id, timestamp, temp, stress, displacement in sortedList:
+    sorted_data_dicts.append({
+        "Sensor_ID": sensor_id,
+        "Timestamp": timestamp,
+        "Temperature": temp,
+        "Stress": stress,
+        "Displacement": displacement
+    })
+
+with open("sorted_sensor_data.json", "w") as f_json:
+    json.dump(sorted_data_dicts, f_json, indent=4)
+
+# Group data by sensor using a dictionary (sensor_id as key, list of tuples as value)
+sensor_dataDict ={ }
+
+for sensor_id, timestamp, temperature, stress, displacement in sensor_data:
+    reading = (timestamp, temperature, stress, displacement)
+    if sensor_id in sensor_dataDict:
+        sensor_dataDict[sensor_id].append(reading)
+    else:
+        sensor_dataDict[sensor_id] = [reading]
+# result
+for sensor, readings in sensor_dataDict.items():
+    print(sensor, "=", readings, "\n")
+#     json file
+with open('sensor_by_id.json', 'w') as f:
+    json.dump(sensor_dataDict, f, indent=4)
+
+# csv
+with open('sensor_by_id.csv', mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['Sensor_ID', 'Timestamp', 'Temperature', 'Stress', 'Displacement'])
+    for sensor_id, readings in sensor_dataDict.items():
+        for reading in readings:
+            writer.writerow([sensor_id] + list(reading))
+
+#Compare readings from different time intervals
+time_dict = { }
+
+# function to create time_dict
+for sensor_id, timestamp, temperature, stress, displacement in sensor_data:
+    reading = (sensor_id, temperature, stress, displacement)
+    if timestamp in time_dict:
+        time_dict[timestamp].append(reading)
+    else:
+        time_dict[timestamp] = [reading]
+
+for timestamp, readings in time_dict.items():
+    print(timestamp, ":", readings)
+
+# S1 Readings
+print("Comparing readings for S1:")
+for reading in sensor_dataDict["S1"]:
+    print(reading)
+# S2 Readings
+print("Comparing readings for S2:")
+for reading in sensor_dataDict["S2"]:
+    print(reading)
+# S3 Readings
+print("Comparing readings for S3:")
+for reading in sensor_dataDict["S3"]:
+    print(reading, "\n")
+
+# json file
+with open('sensor_by_time.json', 'w') as f:
+    json.dump(time_dict, f, indent=4)
+
+# csv
+with open('sensor_by_time.csv', mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['Timestamp', 'Sensor_ID', 'Temperature', 'Stress', 'Displacement'])
+    for timestamp, readings in time_dict.items():
+        for reading in readings:
+            writer.writerow([timestamp] + list(reading))
+
+
+# Extract all timestamps into a list and sort them
+timestamps = [reading[1] for reading in sensor_data]
+timestamps.sort()
+print("Sorted Timestamps:", timestamps, "\n")
+
+#   Identify unique sensors with extreme temp
+extreme_temp = set()
+for sensor_id, readings in sensor_dataDict.items():
+    for reading in readings:
+        temp = reading[1]
+        if temp > 36.5:
+            extreme_temp.add(sensor_id)
+print("extreme_temp:", extreme_temp, "\n")
+
+# Use sets to find unique sensor IDs that recorded stress > 13.0
+extreme_stress = set()
+for sensor_id, readings in sensor_dataDict.items():
+    for reading in readings:
+        stress = reading[2]
+        if stress > 13.0 :
+            extreme_stress.add(sensor_id)
+
+print("extreme_stress:", extreme_stress, "\n")
+# json
+summary_json = {
+    "sorted_timestamps": timestamps,
+    "extreme_temperature_sensors": list(extreme_temp),
+    "extreme_stress_sensors": list(extreme_stress)
+}
+
+with open('extremes_summary.json', 'w') as f_json:
+    json.dump(summary_json, f_json, indent=4)
+
+# csv
+with open('extremes_summary.csv', 'w', newline='') as f_csv:
+    writer = csv.writer(f_csv)
+
+    # Write header
+    writer.writerow(['Category', 'Values'])
+
+    # Write timestamps
+    writer.writerow(['Sorted Timestamps'] + timestamps)
+
+    # Write extreme temperature sensors
+    writer.writerow(['Extreme Temperature Sensors'] + list(extreme_temp))
+
+    # Write extreme stress sensors
+    writer.writerow(['Extreme Stress Sensors'] + list(extreme_stress))
+
+
+
+# Summarize the data by calculating max, min, and average readings per sensor
+sensor_statistics = {}
+
+for sensor_id, readings in sensor_dataDict.items():
+    temps = []
+    stresses = []
+    for reading in readings:
+        temps.append(reading[1])
+        stresses.append(reading[2])
+
+    temp_max = max(temps)
+    temp_min = min(temps)
+    temp_avg = sum(temps) / len(temps)
+
+    stress_max = max(stresses)
+    stress_min = min(stresses)
+    stress_avg = sum(stresses) / len(stresses)
+
+    sensor_statistics[sensor_id] = {
+        "temperature": (temp_max, temp_min, round(temp_avg, 2)),
+        "stress": (stress_max, stress_min, round(stress_avg, 2))
+    }
+
+# results
+print("Sensor Statistics (Max, Min, Avg):")
+for sensor, stats in sensor_statistics.items():
+    print(f"{sensor}:")
+    print(
+        f"  Temperature --> Max: {stats['temperature'][0]}, Min: {stats['temperature'][1]}, Avg: {stats['temperature'][2]}")
+    print(f"  Stress --> Max: {stats['stress'][0]}, Min: {stats['stress'][1]}, Avg: {stats['stress'][2]}")
+
+# Max Displacement per sensor
+max_displacement = {}
+
+print("Max Displacement per Sensor:")
+for sensor_id, readings in sensor_dataDict.items():
+    displacements = [reading[3] for reading in readings]
+    max_value = max(displacements)
+    max_displacement[sensor_id] = max_value
+    print(f"{sensor_id}: {max_value}")
+
+#json file
+with open('max_displacement_per_sensor.json', 'w') as json_file:
+    json.dump(max_displacement, json_file, indent=4)
+
+# csv file
+with open('max_displacement_per_sensor.csv', mode='w', newline='') as csv_file:
+    writer = csv.writer(csv_file)
+    writer.writerow(['Sensor_ID', 'Max_Displacement'])
+    for sensor_id, disp_max in max_displacement.items():
+        writer.writerow([sensor_id, max_displacement])
+
+# all data in one file
+complete_summary = {
+    "sorted_data": sorted_data_dicts,
+    "sensor_data_by_id": sensor_dataDict,
+    "sensor_data_by_time": time_dict,
+    "sorted_timestamps": timestamps,
+    "extreme_temperature_sensors": list(extreme_temp),
+    "extreme_stress_sensors": list(extreme_stress),
+    "sensor_statistics": sensor_statistics,
+    "max_displacement_per_sensor": max_displacement
+}
+
+# Save all to one JSON file
+with open("complete_sensor_summary.json", "w") as f:
+    json.dump(complete_summary, f, indent=4)
+
+# all csv file
+with open("complete_sensor_summary.csv", mode='w', newline='') as f:
+    writer = csv.writer(f, delimiter="\t")  # Use tab as separator
+
+    # Section 1: Sorted Sensor Data
+    writer.writerow(["--- Sorted Sensor Data ---"])
+    writer.writerow(["Sensor_ID", "Timestamp", "Temperature", "Stress", "Displacement"])
+    for row in sorted_data_dicts:
+        writer.writerow([
+            row["Sensor_ID"],
+            row["Timestamp"],
+            row["Temperature"],
+            row["Stress"],
+            row["Displacement"]
+        ])
+    writer.writerow([])
+
+    # Section 2: Sensor Data Grouped by ID
+    writer.writerow(["--- Sensor Data by Sensor_ID ---"])
+    writer.writerow(["Sensor_ID", "Timestamp", "Temperature", "Stress", "Displacement"])
+    for sensor_id, readings in sensor_dataDict.items():
+        for reading in readings:
+            writer.writerow([sensor_id] + list(reading))
+    writer.writerow([])
+
+    # Section 3: Sensor Data Grouped by Timestamp
+    writer.writerow(["--- Sensor Data by Timestamp ---"])
+    writer.writerow(["Timestamp", "Sensor_ID", "Temperature", "Stress", "Displacement"])
+    for timestamp, readings in time_dict.items():
+        for reading in readings:
+            writer.writerow([timestamp] + list(reading))
+    writer.writerow([])
+
+    # Section 4: Sorted Timestamps
+    writer.writerow(["--- Sorted Timestamps ---"])
+    writer.writerow(["Timestamps"] + timestamps)
+    writer.writerow([])
+
+    # Section 5: Extreme Sensor IDs
+    writer.writerow(["--- Extreme Sensors ---"])
+    writer.writerow(["Extreme Temperature Sensors"] + list(extreme_temp))
+    writer.writerow(["Extreme Stress Sensors"] + list(extreme_stress))
+    writer.writerow([])
+
+    # Section 6: Sensor Statistics
+    writer.writerow(["--- Sensor Statistics (Temp: Max, Min, Avg | Stress: Max, Min, Avg) ---"])
+    writer.writerow(["Sensor_ID", "Temp_Max", "Temp_Min", "Temp_Avg", "Stress_Max", "Stress_Min", "Stress_Avg"])
+    for sensor_id, stats in sensor_statistics.items():
+        writer.writerow([
+            sensor_id,
+            stats["temperature"][0], stats["temperature"][1], stats["temperature"][2],
+            stats["stress"][0], stats["stress"][1], stats["stress"][2]
+        ])
+    writer.writerow([])
+
+    # Section 7: Max Displacement
+    writer.writerow(["--- Max Displacement per Sensor ---"])
+    writer.writerow(["Sensor_ID", "Max_Displacement"])
+    for sensor_id, disp in max_displacement.items():
+        writer.writerow([sensor_id, disp])
+
+#convet to excel
+
+# Section 1: Sorted Sensor Data
+df_sorted = pd.DataFrame(sorted_data_dicts)
+
+# Section 2: Sensor Data by ID
+rows_by_id = []
+for sensor_id, readings in sensor_dataDict.items():
+    for reading in readings:
+        rows_by_id.append({
+            "Sensor_ID": sensor_id,
+            "Timestamp": reading[0],
+            "Temperature": reading[1],
+            "Stress": reading[2],
+            "Displacement": reading[3]
+        })
+df_by_id = pd.DataFrame(rows_by_id)
+
+# Section 3: Sensor Data by Timestamp
+rows_by_time = []
+for timestamp, readings in time_dict.items():
+    for reading in readings:
+        rows_by_time.append({
+            "Timestamp": timestamp,
+            "Sensor_ID": reading[0],
+            "Temperature": reading[1],
+            "Stress": reading[2],
+            "Displacement": reading[3]
+        })
+df_by_time = pd.DataFrame(rows_by_time)
+
+# Section 4: Sorted Timestamps
+df_timestamps = pd.DataFrame({"Sorted Timestamps": timestamps})
+
+# Section 5: Extreme Sensors
+df_extreme = pd.DataFrame({
+    "Extreme Temperature Sensors": pd.Series(list(extreme_temp)),
+    "Extreme Stress Sensors": pd.Series(list(extreme_stress))
+})
+
+# Section 6: Sensor Statistics
+rows_stats = []
+for sensor_id, stats in sensor_statistics.items():
+    rows_stats.append({
+        "Sensor_ID": sensor_id,
+        "Temp_Max": stats["temperature"][0],
+        "Temp_Min": stats["temperature"][1],
+        "Temp_Avg": stats["temperature"][2],
+        "Stress_Max": stats["stress"][0],
+        "Stress_Min": stats["stress"][1],
+        "Stress_Avg": stats["stress"][2]
+    })
+df_stats = pd.DataFrame(rows_stats)
+
+# Section 7: Max Displacement
+df_disp = pd.DataFrame({
+    "Sensor_ID": list(max_displacement.keys()),
+    "Max_Displacement": list(max_displacement.values())
+})
+
+# Save all to one Excel file with multiple sheets
+with pd.ExcelWriter("complete_sensor_summary.xlsx", engine='openpyxl') as writer:
+    df_sorted.to_excel(writer, sheet_name="Sorted_Data", index=False)
+    df_by_id.to_excel(writer, sheet_name="By_Sensor_ID", index=False)
+    df_by_time.to_excel(writer, sheet_name="By_Timestamp", index=False)
+    df_timestamps.to_excel(writer, sheet_name="Timestamps", index=False)
+    df_extreme.to_excel(writer, sheet_name="Extreme_Sensors", index=False)
+    df_stats.to_excel(writer, sheet_name="Sensor_Stats", index=False)
+    df_disp.to_excel(writer, sheet_name="Max_Displacement", index=False)
+
+
