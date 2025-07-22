@@ -1,0 +1,14 @@
+class OhmsLaw:
+    def __init__(self, current, resistance):
+        self.current = current
+        self.resistance = resistance
+
+    def calculate_voltage(self):
+        return self.current * self.resistance  # V = I * R
+
+
+
+ohm = OhmsLaw(current=2, resistance=5)
+voltage = ohm.calculate_voltage()
+
+print(f"Voltage = {voltage} V")
