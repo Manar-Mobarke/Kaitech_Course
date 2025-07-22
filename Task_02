@@ -1,0 +1,50 @@
+class LinearEq3x3:
+    def __init__(self, coefficients, constants):
+        self.coefficients = coefficients
+        self.constants = constants
+
+    def determinant_3x3(self, matrix):
+        return (
+            matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[2][1] * matrix[1][2])
+            - matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[2][0] * matrix[1][2])
+            + matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[2][0] * matrix[1][1])
+        )
+
+    def replace_column(self, matrix, col_index):
+        replaced = []
+        for i in range(3):
+            row = matrix[i][:]
+            row[col_index] = self.constants[i]
+            replaced.append(row)
+        return replaced
+
+    def solve(self):
+        D = self.determinant_3x3(self.coefficients)
+        Dx = self.determinant_3x3(self.replace_column(self.coefficients, 0))
+        Dy = self.determinant_3x3(self.replace_column(self.coefficients, 1))
+        Dz = self.determinant_3x3(self.replace_column(self.coefficients, 2))
+
+        if D == 0:
+            if Dx == 0 and Dy == 0 and Dz == 0:
+                return "Infinite solutions"
+            else:
+                return "No solution"
+        else:
+            x = Dx / D
+            y = Dy / D
+            z = Dz / D
+
+            return f"Solution: x = {x}, y = {y}, z = {z}"
+
+
+
+coefficients = [
+    [2, 3, 1],
+    [4, 1, 2],
+    [3, 2, 3]
+]
+
+constants = [1, 2, 3]
+
+solver = LinearEq3x3(coefficients, constants)
+print(solver.solve())
